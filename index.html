@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Chat</title>
+    <style>
+        body{
+            font-family:Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            background-color: #f4f4f4;
+            display:flex;
+            flex-direction:column;
+            align-items:center;
+            justify-content:center;
+            height:100vh;
+            margin:0;       
+        }
+        .container{
+            background: #f4f4f4;
+            padding:20px;
+            border-radius:10px;
+            box-shadow:1px 3px 10px ;
+            width:350px;
+        }
+        h2{
+            margin-bottom:15px;
+            color:blueviolet;
+            text-align: center;
+        }
+        input, button{
+            width:90%;
+            padding: 10px;
+            margin-top:8px;
+            border:1px solid #ccc;
+            border-radius:10px;
+            font-size:15px;
+        }
+    
+        button{
+        background-color:rgb(43, 3, 3);
+        color:white;
+        cursor:pointer;
+        border:none;
+        transition:0.3s;
+         }
+    
+         button:hover{
+        background-color:brown;
+         }
+    
+         ul{
+        list-style:none;
+        padding:0;
+        margin-top:15px;
+        max-height: 200px;
+        overflow-y: auto;
+         }
+        li{
+        background:#f2eaea;
+        padding:8px;
+        border-radius: 5px;
+        margin-bottom: 5px;
+        text-align: center;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>WebSocket Chat</h2>
+        <input type="text" id="usernameInput" placeholder="Kullanıcı adınızı girin">
+        <button onclick="setUsername()">Giriş Yap</button>
+        <hr>
+        <input type="text" id="toUser" placeholder="Alıcı (Kullanıcı Adı)">
+        <input type="text" id="messageInput" placeholder="Mesajınızı Yazın"></input>
+       
+        <button onclick="sendMessage()">Gönder</button>
+        
+        <ul id="messages"></ul>
+    </div>
+    
+    <script>
+        let ws = new WebSocket("ws://localhost:8080");
+        let username = "";
+
+        ws.onopen = () => console.log("Bağlantı kuruldu.");//bağlantı kurulduğunu konsole bastırır
+
+        ws.onmessage = (event) => {
+            let data = JSON.parse(event.data);
+            let li = document.createElement("li");
+            li.textContent = data.from + ": " + data.message;
+            document.getElementById("messages").appendChild(li);
+        };//web socket bağlantısından gelen mesajları dinler,Json formatındaki veriyi çözümler
+        //mesaj listesimin sonuna yeni bir <li> ögesi ekleyerek gönderenin adını ve mesajını görüntüler
+
+        function setUsername() {
+            username = document.getElementById("usernameInput").value;//html belgesindeki id değeri usernameınput olan ögeyi seçer ve eğer bu ögeden kullanıcıdan veri alıyorsa o ögenin değerini alır
+            if (username.trim() === "") {
+                alert("Lütfen bir kullanıcı adı girin!");
+                return;
+            }/* if koşulunda girilen bir kullanıcı yok ise bir uyarı mesajı gönderir*/
+            ws.send(JSON.stringify({ type: "set_username", username: username }));
+        }
+
+        function sendMessage() {
+            let toUser = document.getElementById("toUser").value;//html belgesinde id değeri "touser olan bir öğreyi seçer ve eğer bu öge input,textarea veya select gibi kullanıa veri alınabilen bir ögeyse bu ögenin değerini alır  "
+            let message = document.getElementById("messageInput").value;
+            if (toUser.trim() === "" || message.trim() === "") {
+                alert("Alıcı ve mesaj alanları boş olamaz!");
+                return;
+            }//if koşulunda girilen alıcı veya mesaj boşsa, bir uyarı mesajı göstererek işlemi durdurur.
+            ws.send(JSON.stringify({ to: toUser, message: message }));
+            document.getElementById("messageInput").value = "";
+        }
+    </script>
+</body>
+</html>
